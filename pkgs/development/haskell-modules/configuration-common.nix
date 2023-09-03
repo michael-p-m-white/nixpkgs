@@ -1206,7 +1206,16 @@ self: super: {
 
   # Too strict version bound on hashable-time.
   # Tests require newer package version.
-  aeson_1_5_6_0 = dontCheck (doJailbreak super.aeson_1_5_6_0);
+  aeson_1_5_6_0 =
+    let aeson_1_5_6_0 = (dontCheck (doJailbreak super.aeson_1_5_6_0));
+    in
+      if lib.versionAtLeast self.ghc.version "9.2.1"
+      then
+        # GHC.Base version 4.16.0.0 (released with GHC version 9.2.1) removed
+        # Data.Semigroup.Option. We need to patch out references to this class
+        # for newer versions of GHC.
+        appendPatch (./patches/aeson-1.5.6.0.patch) aeson_1_5_6_0
+      else aeson_1_5_6_0;
 
   # musl fixes
   # dontCheck: use of non-standard strptime "%s" which musl doesn't support; only used in test
